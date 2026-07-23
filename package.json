@@ -1,0 +1,52 @@
+{
+  "name": "fluxo-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@radix-ui/react-checkbox": "^1.3.9",
+    "@radix-ui/react-dialog": "^1.1.21",
+    "@radix-ui/react-dropdown-menu": "^2.1.22",
+    "@radix-ui/react-label": "^2.1.13",
+    "@radix-ui/react-popover": "^1.1.21",
+    "@radix-ui/react-select": "^2.3.5",
+    "@radix-ui/react-slot": "^1.3.1",
+    "@radix-ui/react-tooltip": "^1.2.14",
+    "@tanstack/react-query": "^5.101.4",
+    "@tanstack/react-table": "^8.20.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.545.0",
+    "motion": "^12.6.3",
+    "next": "16.2.11",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "^7.54.2",
+    "recharts": "^3.10.0",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "16.2.11",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.7.3"
+  }
+}
