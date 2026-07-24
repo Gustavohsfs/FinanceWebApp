@@ -22,7 +22,7 @@ interface CreditCardItemProps {
   card: CreditCard;
   onEdit: (card: CreditCard) => void;
   onDelete: (card: CreditCard) => void;
-  onOpenInvoice: (card: CreditCard) => void;
+  onOpenInvoice?: (card: CreditCard) => void;
 }
 
 export function CreditCardItem({ card, onEdit, onDelete, onOpenInvoice }: CreditCardItemProps) {
@@ -31,14 +31,14 @@ export function CreditCardItem({ card, onEdit, onDelete, onOpenInvoice }: Credit
   return (
     <Card>
       <Card.Body className="flex flex-col gap-3 p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex flex-col">
-            <span className="text-body font-medium text-bone">{card.name}</span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-body font-medium text-bone">{card.name}</span>
             <span className="text-micro text-bone-800">
               Fecha dia {card.closingDay} · vence dia {card.dueDay}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             {isLoading ? (
               <Skeleton className="h-5 w-16" />
             ) : (
@@ -81,7 +81,14 @@ export function CreditCardItem({ card, onEdit, onDelete, onOpenInvoice }: Credit
           </div>
           <span className="text-micro text-bone-800">Limite {formatMoney(card.limitCents)}</span>
         </div>
-        <Button variant="outline" size="sm" className="self-start" onClick={() => onOpenInvoice(card)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => onOpenInvoice?.(card)}
+          disabled={!onOpenInvoice}
+          aria-disabled={!onOpenInvoice}
+        >
           Ver fatura
         </Button>
       </Card.Body>

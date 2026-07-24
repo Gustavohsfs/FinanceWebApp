@@ -117,7 +117,6 @@ export function AccountsView() {
                   setCardSheetOpen(true);
                 }}
                 onDelete={(card) => setDeleting({ kind: "card", value: card })}
-                onOpenInvoice={() => undefined}
               />
             ))}
           </div>

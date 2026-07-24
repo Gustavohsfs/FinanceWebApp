@@ -34,7 +34,7 @@ export function ResourceDeleteDialog({
         if (!pending) onOpenChange(nextOpen);
       }}
     >
-      <DialogContent>
+      <DialogContent closeDisabled={pending}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

@@ -12,8 +12,11 @@ export const DialogTrigger = DialogPrimitive.Trigger;
 function DialogContent({
   className,
   children,
+  closeDisabled = false,
   ...props
-}: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
+}: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+  closeDisabled?: boolean;
+}) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
@@ -26,7 +29,10 @@ function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md text-bone-600 transition-colors hover:text-bone focus-visible:outline-none">
+        <DialogPrimitive.Close
+          className="absolute right-4 top-4 rounded-md text-bone-600 transition-colors hover:text-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:pointer-events-none disabled:opacity-50"
+          disabled={closeDisabled}
+        >
           <X className="size-4" />
           <span className="sr-only">Fechar</span>
         </DialogPrimitive.Close>
