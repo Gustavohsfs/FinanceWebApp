@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import type { CategoryInsight } from "@/core/api/types";
@@ -13,10 +14,19 @@ interface CategoryDonutProps {
   onSelect: (categoryId: string | null) => void;
 }
 
-export function CategoryDonut({ data, selectedCategoryId, onSelect }: CategoryDonutProps) {
+export const CategoryDonut = memo(function CategoryDonut({
+  data,
+  selectedCategoryId,
+  onSelect,
+}: CategoryDonutProps) {
   const { data: categories = [] } = useCategoriesQuery();
+  const colorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const category of categories) map.set(category.id, category.color);
+    return map;
+  }, [categories]);
   const colorFor = (categoryId: string | null) =>
-    categories.find((category) => category.id === categoryId)?.color ?? "#52525B";
+    (categoryId ? colorMap.get(categoryId) : undefined) ?? "#52525B";
 
   if (data.length === 0) {
     return <EmptyState title="Nenhuma saída este mês." className="h-64" />;
@@ -82,4 +92,4 @@ export function CategoryDonut({ data, selectedCategoryId, onSelect }: CategoryDo
       </ul>
     </div>
   );
-}
+});

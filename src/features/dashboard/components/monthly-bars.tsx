@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import type { MonthlyComparison } from "@/core/api/types";
@@ -10,7 +11,7 @@ interface MonthlyBarsProps {
   data: MonthlyComparison[];
 }
 
-export function MonthlyBars({ data }: MonthlyBarsProps) {
+export const MonthlyBars = memo(function MonthlyBars({ data }: MonthlyBarsProps) {
   return (
     <div className="h-56 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -47,4 +48,4 @@ export function MonthlyBars({ data }: MonthlyBarsProps) {
       </ResponsiveContainer>
     </div>
   );
-}
+});
