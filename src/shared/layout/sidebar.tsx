@@ -3,7 +3,6 @@
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 
 import { cn } from "@/shared/lib/cn";
 import { useUiStore } from "@/shared/stores/ui-store";
@@ -19,20 +18,6 @@ export function Sidebar({ userName, balanceLabel }: SidebarProps) {
   const pathname = usePathname();
   const collapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
-      const isTyping = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
-      if (isTyping) return;
-      if (event.key === "[") {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [toggleSidebar]);
 
   return (
     <aside

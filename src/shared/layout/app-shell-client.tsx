@@ -1,7 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
+
+import { ShortcutsHelpDialog } from "@/shared/components/shortcuts-help-dialog";
+import { useGlobalShortcuts } from "@/shared/hooks/use-global-shortcuts";
 
 import { labelForPathname } from "./nav-items";
 import { Topbar } from "./topbar";
@@ -15,11 +18,15 @@ interface AppShellClientProps {
 export function AppShellClient({ userName, userEmail, children }: AppShellClientProps) {
   const pathname = usePathname();
   const title = labelForPathname(pathname);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  useGlobalShortcuts(useCallback(() => setHelpOpen(true), []));
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <Topbar title={title} userName={userName} userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      <ShortcutsHelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
