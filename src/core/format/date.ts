@@ -37,6 +37,14 @@ export function dayKey(iso: string): string {
   return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
 }
 
+/** Soma dias a uma chave local "YYYY-MM-DD", sem conversão de fuso. */
+export function addDaysToKey(key: string, days: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return key;
+  const [y, m, d] = key.split("-").map(Number);
+  const result = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, (d ?? 1) + days));
+  return `${result.getUTCFullYear()}-${pad2(result.getUTCMonth() + 1)}-${pad2(result.getUTCDate())}`;
+}
+
 export function currentMonthKey(): string {
   return monthKey(nowISO());
 }

@@ -27,9 +27,11 @@ export function AccountsView() {
   const [cardSheetOpen, setCardSheetOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account>();
   const [editingCard, setEditingCard] = useState<CreditCard>();
-  const [invoiceCard, setInvoiceCard] = useState<CreditCard>();
+  const [invoiceSelection, setInvoiceSelection] = useState<{
+    card: CreditCard;
+    month: string;
+  }>();
   const [invoiceSheetOpen, setInvoiceSheetOpen] = useState(false);
-  const [invoiceMonth] = useState(currentMonthKey);
   const [deleting, setDeleting] = useState<
     { kind: "account"; value: Account } | { kind: "card"; value: CreditCard }
   >();
@@ -123,7 +125,7 @@ export function AccountsView() {
                 }}
                 onDelete={(card) => setDeleting({ kind: "card", value: card })}
                 onOpenInvoice={(card) => {
-                  setInvoiceCard(card);
+                  setInvoiceSelection({ card, month: currentMonthKey() });
                   setInvoiceSheetOpen(true);
                 }}
               />
@@ -151,8 +153,8 @@ export function AccountsView() {
       <InvoiceDetailSheet
         open={invoiceSheetOpen}
         onOpenChange={setInvoiceSheetOpen}
-        card={invoiceCard}
-        month={invoiceMonth}
+        card={invoiceSelection?.card}
+        month={invoiceSelection?.month ?? currentMonthKey()}
       />
       <ResourceDeleteDialog
         open={Boolean(deleting)}

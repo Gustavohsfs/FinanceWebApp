@@ -4,7 +4,12 @@ import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { AggregationBasis } from "@/core/api/types";
-import { currentMonthKey, formatDateInput, monthRangeUTC } from "@/core/format/date";
+import {
+  addDaysToKey,
+  currentMonthKey,
+  formatDateInput,
+  monthRangeUTC,
+} from "@/core/format/date";
 import { formatMoney } from "@/core/format/money";
 import { BasisToggle } from "@/shared/components/basis-toggle";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -25,12 +30,12 @@ const METHOD_LABELS: Record<string, string> = { CASH: "Dinheiro", PIX: "Pix", DE
 export function ReportsView() {
   const defaultRange = monthRangeUTC(currentMonthKey());
   const [from, setFrom] = useState(formatDateInput(defaultRange.from));
-  const [to, setTo] = useState(formatDateInput(defaultRange.to));
+  const [to, setTo] = useState(addDaysToKey(formatDateInput(defaultRange.to), -1));
   const [basis, setBasis] = useState<AggregationBasis>("accrual");
 
   const { data: categories = [] } = useCategoriesQuery();
   const fromIso = `${from}T00:00:00-03:00`;
-  const toIso = `${to}T23:59:59-03:00`;
+  const toIso = `${addDaysToKey(to, 1)}T00:00:00-03:00`;
   const { data, isLoading, isError, refetch } = useReportTransactionsQuery(fromIso, toIso, basis);
 
   const rows = useMemo(
