@@ -6,7 +6,7 @@ import { serverEnv } from "@/core/config/env";
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icon|apple-icon|login|registrar).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|icon|apple-icon|login|registrar|baixar).*)",
   ],
 };
 
