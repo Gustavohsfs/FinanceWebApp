@@ -14,7 +14,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Category, Transaction } from "@/core/api/types";
 import { dayLabel } from "@/core/format/date";
-import { formatMoneyCompact } from "@/core/format/money";
 import { CategoryBadge } from "@/shared/components/category-badge";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MoneyText } from "@/shared/components/money-text";
@@ -28,11 +27,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 
-import { useDeleteTransaction, useUpdateTransaction } from "../hooks/use-transaction-mutations";
+import { useDeleteTransaction } from "../hooks/use-transaction-mutations";
 import { EditScopeDialog } from "./edit-scope-dialog";
 
 interface TransactionsTableProps {
@@ -61,12 +59,9 @@ export function TransactionsTable({
   const [sorting, setSorting] = useState<SortingState>([{ id: "occurredAt", desc: true }]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
-  const [editingCell, setEditingCell] = useState<string | null>(null);
-  const [draftAmount, setDraftAmount] = useState("");
   const [scopeTarget, setScopeTarget] = useState<Transaction | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const updateTransaction = useUpdateTransaction();
   const deleteTransaction = useDeleteTransaction();
 
   useEffect(() => {
@@ -83,13 +78,6 @@ export function TransactionsTable({
     observer.observe(node);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, onLoadMore]);
-
-  function commitAmount(transaction: Transaction, scope: "one" | "future" | "all" = "one") {
-    const cents = Math.round(parseFloat(draftAmount.replace(",", ".")) * 100);
-    setEditingCell(null);
-    if (!Number.isFinite(cents) || cents <= 0 || cents === transaction.amountCents) return;
-    void updateTransaction.mutateAsync({ id: transaction.id, scope, input: { amountCents: cents } });
-  }
 
   function handleDelete(transaction: Transaction) {
     if (transaction.installmentGroupId) {
@@ -171,32 +159,9 @@ export function TransactionsTable({
         header: () => <span className="block text-right">Valor</span>,
         cell: ({ row }) => {
           const transaction = row.original;
-          const isEditing = editingCell === transaction.id;
           const signed = transaction.type === "EXPENSE" ? -transaction.amountCents : transaction.amountCents;
-          if (isEditing) {
-            return (
-              <Input
-                autoFocus
-                className="h-8 w-28 text-right"
-                value={draftAmount}
-                onChange={(event) => setDraftAmount(event.target.value)}
-                onBlur={() => commitAmount(transaction)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") commitAmount(transaction);
-                  if (event.key === "Escape") setEditingCell(null);
-                }}
-              />
-            );
-          }
           return (
-            <button
-              type="button"
-              className="block w-full text-right"
-              onDoubleClick={() => {
-                setEditingCell(transaction.id);
-                setDraftAmount(formatMoneyCompact(transaction.amountCents));
-              }}
-            >
+            <div className="block w-full text-right">
               <MoneyText
                 cents={signed}
                 signed
@@ -208,7 +173,7 @@ export function TransactionsTable({
                   projetado
                 </Badge>
               )}
-            </button>
+            </div>
           );
         },
       },
@@ -236,8 +201,8 @@ export function TransactionsTable({
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- commitAmount/handleDelete são recriadas por render e usam refs estáveis (mutations, setState)
-    [categories, editingCell, draftAmount, onEdit],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleDelete usa mutation estável e setState
+    [categories, onEdit],
   );
 
   const table = useReactTable({

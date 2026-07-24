@@ -22,7 +22,7 @@ interface CreditCardItemProps {
   card: CreditCard;
   onEdit: (card: CreditCard) => void;
   onDelete: (card: CreditCard) => void;
-  onOpenInvoice?: (card: CreditCard) => void;
+  onOpenInvoice: (card: CreditCard) => void;
 }
 
 export function CreditCardItem({ card, onEdit, onDelete, onOpenInvoice }: CreditCardItemProps) {
@@ -85,9 +85,7 @@ export function CreditCardItem({ card, onEdit, onDelete, onOpenInvoice }: Credit
           variant="outline"
           size="sm"
           className="self-start"
-          onClick={() => onOpenInvoice?.(card)}
-          disabled={!onOpenInvoice}
-          aria-disabled={!onOpenInvoice}
+          onClick={() => onOpenInvoice(card)}
         >
           Ver fatura
         </Button>

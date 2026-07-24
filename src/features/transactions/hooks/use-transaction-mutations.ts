@@ -12,6 +12,7 @@ function invalidateAfterMutation(queryClient: ReturnType<typeof useQueryClient>)
   void queryClient.invalidateQueries({ queryKey: ["transactions"] });
   void queryClient.invalidateQueries({ queryKey: ["insights"] });
   void queryClient.invalidateQueries({ queryKey: ["goals"] });
+  void queryClient.invalidateQueries({ queryKey: ["credit-cards"] });
 }
 
 export function useCreateTransaction() {

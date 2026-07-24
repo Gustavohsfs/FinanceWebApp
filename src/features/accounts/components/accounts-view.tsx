@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import type { Account, CreditCard } from "@/core/api/types";
+import { currentMonthKey } from "@/core/format/date";
 import { EmptyState } from "@/shared/components/empty-state";
 import { useAccountsQuery } from "@/shared/queries/use-accounts";
 import { useCreditCardsQuery } from "@/shared/queries/use-credit-cards";
@@ -14,6 +15,7 @@ import { AccountItem } from "./account-item";
 import { AccountFormSheet } from "./account-form-sheet";
 import { CreditCardFormSheet } from "./credit-card-form-sheet";
 import { CreditCardItem } from "./credit-card-item";
+import { InvoiceDetailSheet } from "./invoice-detail-sheet";
 import { ResourceDeleteDialog } from "./resource-delete-dialog";
 import { useDeleteAccount } from "../hooks/use-account-mutations";
 import { useDeleteCreditCard } from "../hooks/use-credit-card-mutations";
@@ -25,6 +27,9 @@ export function AccountsView() {
   const [cardSheetOpen, setCardSheetOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account>();
   const [editingCard, setEditingCard] = useState<CreditCard>();
+  const [invoiceCard, setInvoiceCard] = useState<CreditCard>();
+  const [invoiceSheetOpen, setInvoiceSheetOpen] = useState(false);
+  const [invoiceMonth] = useState(currentMonthKey);
   const [deleting, setDeleting] = useState<
     { kind: "account"; value: Account } | { kind: "card"; value: CreditCard }
   >();
@@ -117,6 +122,10 @@ export function AccountsView() {
                   setCardSheetOpen(true);
                 }}
                 onDelete={(card) => setDeleting({ kind: "card", value: card })}
+                onOpenInvoice={(card) => {
+                  setInvoiceCard(card);
+                  setInvoiceSheetOpen(true);
+                }}
               />
             ))}
           </div>
@@ -138,6 +147,12 @@ export function AccountsView() {
           setCardSheetOpen(open);
           if (!open) setEditingCard(undefined);
         }}
+      />
+      <InvoiceDetailSheet
+        open={invoiceSheetOpen}
+        onOpenChange={setInvoiceSheetOpen}
+        card={invoiceCard}
+        month={invoiceMonth}
       />
       <ResourceDeleteDialog
         open={Boolean(deleting)}
