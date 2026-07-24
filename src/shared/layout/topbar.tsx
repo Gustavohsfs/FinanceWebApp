@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, User } from "lucide-react";
+import { Download, Search, User } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LogoutButton } from "@/features/auth";
@@ -30,6 +31,15 @@ export function Topbar({ title, userName, userEmail, children }: TopbarProps) {
 
       <div className="flex items-center gap-3">
         {children}
+
+        <Link
+          href="/baixar"
+          className="flex items-center gap-2 rounded-lg border border-ink-800 bg-ink-900 px-3 py-1.5 text-small text-bone-600 transition-colors hover:text-bone"
+          aria-label="Baixe o app Android"
+        >
+          <Download className="size-3.5" />
+          <span className="hidden sm:inline">Baixe o app</span>
+        </Link>
 
         <button
           type="button"

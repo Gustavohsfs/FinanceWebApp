@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { motion } from "motion/react";
 
 const PATH =
@@ -31,6 +33,13 @@ export function AuthVisualPanel() {
         <p className="max-w-sm text-body text-bone-600">
           O mobile registra em 5 segundos. O web mostra o que esses segundos constroem.
         </p>
+        <Link
+          href="/baixar"
+          className="mt-2 inline-flex items-center gap-1.5 text-small font-medium text-flame-400 transition-colors hover:text-flame-500"
+        >
+          Baixe o app Android
+          <ArrowRight className="size-3.5" />
+        </Link>
       </div>
     </div>
   );
