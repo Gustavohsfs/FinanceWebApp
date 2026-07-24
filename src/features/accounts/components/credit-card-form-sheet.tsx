@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
-import { parseMoneyInput } from "@/core/format/money";
+import type { CreditCard } from "@/core/api/types";
+import { formatMoneyCompact, parseMoneyInput } from "@/core/format/money";
 import { useAccountsQuery } from "@/shared/queries/use-accounts";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -12,17 +13,26 @@ import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 
-import { useCreateCreditCard } from "../hooks/use-credit-card-mutations";
+import { useCreateCreditCard, useUpdateCreditCard } from "../hooks/use-credit-card-mutations";
 import { creditCardFormSchema, type CreditCardFormInput } from "../schemas/credit-card-form.schema";
 
 interface CreditCardFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  card?: CreditCard;
 }
 
-export function CreditCardFormSheet({ open, onOpenChange }: CreditCardFormSheetProps) {
+export function CreditCardFormSheet({ open, onOpenChange, card }: CreditCardFormSheetProps) {
   const { data: accounts = [] } = useAccountsQuery();
   const createCreditCard = useCreateCreditCard();
+  const updateCreditCard = useUpdateCreditCard();
+  const cardId = card?.id;
+  const cardAccountId = card?.accountId;
+  const cardName = card?.name;
+  const cardLimitCents = card?.limitCents;
+  const cardClosingDay = card?.closingDay;
+  const cardDueDay = card?.dueDay;
+  const defaultAccountId = accounts[0]?.id ?? "";
   const {
     register,
     handleSubmit,
@@ -34,25 +44,56 @@ export function CreditCardFormSheet({ open, onOpenChange }: CreditCardFormSheetP
   });
 
   useEffect(() => {
-    if (open) reset({ accountId: accounts[0]?.id ?? "", name: "", limit: "", closingDay: 1, dueDay: 10 });
-  }, [open, accounts, reset]);
+    if (!open) return;
+
+    if (cardId) {
+      reset({
+        accountId: cardAccountId ?? "",
+        name: cardName ?? "",
+        limit: formatMoneyCompact(cardLimitCents ?? 0),
+        closingDay: cardClosingDay ?? 1,
+        dueDay: cardDueDay ?? 10,
+      });
+      return;
+    }
+
+    reset({ accountId: defaultAccountId, name: "", limit: "", closingDay: 1, dueDay: 10 });
+  }, [
+    open,
+    cardId,
+    cardAccountId,
+    cardName,
+    cardLimitCents,
+    cardClosingDay,
+    cardDueDay,
+    defaultAccountId,
+    reset,
+  ]);
 
   async function submit(values: CreditCardFormInput) {
-    await createCreditCard.mutateAsync({
+    const input = {
       accountId: values.accountId,
       name: values.name,
       limitCents: parseMoneyInput(values.limit),
       closingDay: values.closingDay,
       dueDay: values.dueDay,
-    });
+    };
+
+    if (card) {
+      await updateCreditCard.mutateAsync({ id: card.id, input });
+    } else {
+      await createCreditCard.mutateAsync(input);
+    }
     onOpenChange(false);
   }
+
+  const pending = isSubmitting || createCreditCard.isPending || updateCreditCard.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Novo cartão</SheetTitle>
+          <SheetTitle>{card ? "Editar cartão" : "Novo cartão"}</SheetTitle>
         </SheetHeader>
         <form id="credit-card-form" onSubmit={handleSubmit(submit)} className="flex flex-1 flex-col gap-4" noValidate>
           <div className="flex flex-col gap-1.5">
@@ -92,8 +133,8 @@ export function CreditCardFormSheet({ open, onOpenChange }: CreditCardFormSheetP
           <Button variant="ghost" type="button" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button form="credit-card-form" type="submit" disabled={isSubmitting}>
-            Salvar cartão
+          <Button form="credit-card-form" type="submit" disabled={pending}>
+            {card ? "Salvar alterações" : "Salvar cartão"}
           </Button>
         </SheetFooter>
       </SheetContent>

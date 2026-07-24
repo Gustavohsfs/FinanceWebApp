@@ -4,19 +4,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
-import { parseMoneyInput } from "@/core/format/money";
+import type { Account, AccountKind } from "@/core/api/types";
+import { formatMoneyCompact, parseMoneyInput } from "@/core/format/money";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 
-import { useCreateAccount } from "../hooks/use-account-mutations";
+import { useCreateAccount, useUpdateAccount } from "../hooks/use-account-mutations";
 import { accountFormSchema, type AccountFormInput } from "../schemas/account-form.schema";
 
 interface AccountFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  account?: Account;
 }
 
 const KINDS: { value: AccountFormInput["kind"]; label: string }[] = [
@@ -26,8 +28,13 @@ const KINDS: { value: AccountFormInput["kind"]; label: string }[] = [
   { value: "INVESTMENT", label: "Investimento" },
 ];
 
-export function AccountFormSheet({ open, onOpenChange }: AccountFormSheetProps) {
+export function AccountFormSheet({ open, onOpenChange, account }: AccountFormSheetProps) {
   const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+  const accountId = account?.id;
+  const accountName = account?.name;
+  const accountKind = account?.kind;
+  const openingBalanceCents = account?.openingBalanceCents;
   const {
     register,
     handleSubmit,
@@ -39,23 +46,47 @@ export function AccountFormSheet({ open, onOpenChange }: AccountFormSheetProps) 
   });
 
   useEffect(() => {
-    if (open) reset({ name: "", kind: "CHECKING", openingBalance: "" });
-  }, [open, reset]);
+    if (!open) return;
+
+    if (accountId) {
+      reset({
+        name: accountName ?? "",
+        kind: accountKind ?? ("CHECKING" as AccountKind),
+        openingBalance: formatMoneyCompact(openingBalanceCents ?? 0),
+      });
+      return;
+    }
+
+    reset({ name: "", kind: "CHECKING", openingBalance: "" });
+  }, [open, accountId, accountName, accountKind, openingBalanceCents, reset]);
 
   async function submit(values: AccountFormInput) {
-    await createAccount.mutateAsync({
-      name: values.name,
-      kind: values.kind,
-      openingBalanceCents: values.openingBalance ? parseMoneyInput(values.openingBalance) : undefined,
-    });
+    if (account) {
+      await updateAccount.mutateAsync({
+        id: account.id,
+        input: {
+          name: values.name,
+          kind: values.kind,
+          openingBalanceCents: parseMoneyInput(values.openingBalance ?? ""),
+        },
+      });
+    } else {
+      await createAccount.mutateAsync({
+        name: values.name,
+        kind: values.kind,
+        openingBalanceCents: values.openingBalance ? parseMoneyInput(values.openingBalance) : undefined,
+      });
+    }
     onOpenChange(false);
   }
+
+  const pending = isSubmitting || createAccount.isPending || updateAccount.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Nova conta</SheetTitle>
+          <SheetTitle>{account ? "Editar conta" : "Nova conta"}</SheetTitle>
         </SheetHeader>
         <form id="account-form" onSubmit={handleSubmit(submit)} className="flex flex-1 flex-col gap-4" noValidate>
           <div className="flex flex-col gap-1.5">
@@ -82,8 +113,8 @@ export function AccountFormSheet({ open, onOpenChange }: AccountFormSheetProps) 
           <Button variant="ghost" type="button" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button form="account-form" type="submit" disabled={isSubmitting}>
-            Salvar conta
+          <Button form="account-form" type="submit" disabled={pending}>
+            {account ? "Salvar alterações" : "Salvar conta"}
           </Button>
         </SheetFooter>
       </SheetContent>
