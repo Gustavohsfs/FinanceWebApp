@@ -1,15 +1,31 @@
 "use client";
 
+import { MoreHorizontal, Trash2 } from "lucide-react";
+
 import type { CreditCard } from "@/core/api/types";
 import { currentMonthKey } from "@/core/format/date";
 import { formatMoney } from "@/core/format/money";
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 import { useInvoiceQuery } from "../hooks/use-credit-card-mutations";
 
-export function CreditCardItem({ card }: { card: CreditCard }) {
+interface CreditCardItemProps {
+  card: CreditCard;
+  onEdit: (card: CreditCard) => void;
+  onDelete: (card: CreditCard) => void;
+  onOpenInvoice: (card: CreditCard) => void;
+}
+
+export function CreditCardItem({ card, onEdit, onDelete, onOpenInvoice }: CreditCardItemProps) {
   const { data: invoice, isLoading } = useInvoiceQuery(card.id, currentMonthKey());
 
   return (
@@ -22,15 +38,35 @@ export function CreditCardItem({ card }: { card: CreditCard }) {
               Fecha dia {card.closingDay} · vence dia {card.dueDay}
             </span>
           </div>
-          {isLoading ? (
-            <Skeleton className="h-5 w-16" />
-          ) : (
-            invoice && (
-              <Badge variant={invoice.status === "OPEN" ? "flame" : "neutral"}>
-                {invoice.status === "OPEN" ? "Aberta" : "Fechada"}
-              </Badge>
-            )
-          )}
+          <div className="flex items-center gap-1">
+            {isLoading ? (
+              <Skeleton className="h-5 w-16" />
+            ) : (
+              invoice && (
+                <Badge variant={invoice.status === "OPEN" ? "flame" : "neutral"}>
+                  {invoice.status === "OPEN" ? "Aberta" : "Fechada"}
+                </Badge>
+              )
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Ações do cartão ${card.name}`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                <DropdownMenuItem onSelect={() => onEdit(card)}>Editar</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onDelete(card)} className="text-ember">
+                  <Trash2 className="size-3.5" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <div className="flex items-end justify-between">
           <div className="flex flex-col">
@@ -45,6 +81,9 @@ export function CreditCardItem({ card }: { card: CreditCard }) {
           </div>
           <span className="text-micro text-bone-800">Limite {formatMoney(card.limitCents)}</span>
         </div>
+        <Button variant="outline" size="sm" className="self-start" onClick={() => onOpenInvoice(card)}>
+          Ver fatura
+        </Button>
       </Card.Body>
     </Card>
   );
