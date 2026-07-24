@@ -61,23 +61,29 @@ export function AccountFormSheet({ open, onOpenChange, account }: AccountFormShe
   }, [open, accountId, accountName, accountKind, openingBalanceCents, reset]);
 
   async function submit(values: AccountFormInput) {
-    if (account) {
-      await updateAccount.mutateAsync({
-        id: account.id,
-        input: {
+    try {
+      if (account) {
+        await updateAccount.mutateAsync({
+          id: account.id,
+          input: {
+            name: values.name,
+            kind: values.kind,
+            openingBalanceCents: parseMoneyInput(values.openingBalance ?? ""),
+          },
+        });
+      } else {
+        await createAccount.mutateAsync({
           name: values.name,
           kind: values.kind,
-          openingBalanceCents: parseMoneyInput(values.openingBalance ?? ""),
-        },
-      });
-    } else {
-      await createAccount.mutateAsync({
-        name: values.name,
-        kind: values.kind,
-        openingBalanceCents: values.openingBalance ? parseMoneyInput(values.openingBalance) : undefined,
-      });
+          openingBalanceCents: values.openingBalance
+            ? parseMoneyInput(values.openingBalance)
+            : undefined,
+        });
+      }
+      onOpenChange(false);
+    } catch {
+      // The mutation hook shows the error toast; keep the sheet open for correction.
     }
-    onOpenChange(false);
   }
 
   const pending = isSubmitting || createAccount.isPending || updateAccount.isPending;

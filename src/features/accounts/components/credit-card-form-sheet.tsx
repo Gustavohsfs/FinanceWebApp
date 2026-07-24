@@ -79,12 +79,16 @@ export function CreditCardFormSheet({ open, onOpenChange, card }: CreditCardForm
       dueDay: values.dueDay,
     };
 
-    if (card) {
-      await updateCreditCard.mutateAsync({ id: card.id, input });
-    } else {
-      await createCreditCard.mutateAsync(input);
+    try {
+      if (card) {
+        await updateCreditCard.mutateAsync({ id: card.id, input });
+      } else {
+        await createCreditCard.mutateAsync(input);
+      }
+      onOpenChange(false);
+    } catch {
+      // The mutation hook shows the error toast; keep the sheet open for correction.
     }
-    onOpenChange(false);
   }
 
   const pending = isSubmitting || createCreditCard.isPending || updateCreditCard.isPending;

@@ -4,7 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import type { Transaction } from "@/core/api/types";
+import type {
+  EditScope,
+  Transaction,
+  UpdateTransactionInput,
+} from "@/core/api/types";
 
 type EditableTransactionType = "INCOME" | "EXPENSE";
 import { formatDateTimeLocal, nowISO, toSPOffsetISOString } from "@/core/format/date";
@@ -49,6 +53,8 @@ export function TransactionFormSheet({
     watch,
     control,
     reset,
+    setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TransactionFormInput>({
     resolver: zodResolver(transactionFormSchema),
@@ -91,9 +97,23 @@ export function TransactionFormSheet({
 
   const type = watch("type");
   const paymentMethod = watch("paymentMethod");
+  const paymentMethodField = register("paymentMethod");
   const filteredCategories = categories.filter((category) => category.type === type && !category.isArchived);
 
   async function submit(values: TransactionFormInput) {
+    if (!hasActiveCreditCard(values, transaction, creditCards)) {
+      setError("creditCardId", {
+        type: "validate",
+        message: "Selecione um cartão ativo",
+      });
+      return;
+    }
+
+    if (transaction && Object.keys(buildUpdateInput(transaction, values)).length === 0) {
+      onOpenChange(false);
+      return;
+    }
+
     if (transaction?.installmentGroupId) {
       setPendingValues(values);
       return;
@@ -101,39 +121,44 @@ export function TransactionFormSheet({
     await persist(values);
   }
 
-  async function persist(values: TransactionFormInput, scope: "one" | "future" | "all" = "one") {
+  async function persist(values: TransactionFormInput, scope: EditScope = "one") {
     const amountCents = parseMoneyInput(values.amount);
-    if (transaction) {
-      await updateTransaction.mutateAsync({
-        id: transaction.id,
-        scope,
-        input: {
+    try {
+      if (transaction) {
+        const input = buildUpdateInput(transaction, values);
+        if (Object.keys(input).length === 0) {
+          onOpenChange(false);
+          return;
+        }
+        await updateTransaction.mutateAsync({
+          id: transaction.id,
+          scope: occurredAtChanged(transaction, values) ? "one" : scope,
+          input,
+        });
+      } else {
+        await createTransaction.mutateAsync({
+          type: values.type,
           amountCents,
           description: values.description,
           occurredAt: toSPOffsetISOString(values.occurredAt),
-          categoryId: values.categoryId ?? null,
+          categoryId: values.categoryId,
           accountId: values.accountId,
-          creditCardId: values.creditCardId ?? null,
+          creditCardId: values.paymentMethod === "CREDIT" ? values.creditCardId : undefined,
           paymentMethod: values.paymentMethod,
-          notes: values.notes ?? null,
-        },
-      });
-    } else {
-      await createTransaction.mutateAsync({
-        type: values.type,
-        amountCents,
-        description: values.description,
-        occurredAt: toSPOffsetISOString(values.occurredAt),
-        categoryId: values.categoryId,
-        accountId: values.accountId,
-        creditCardId: values.paymentMethod === "CREDIT" ? values.creditCardId : undefined,
-        paymentMethod: values.paymentMethod,
-        installmentTotal: values.installmentTotal,
-        notes: values.notes,
-      });
+          installmentTotal: values.installmentTotal,
+          notes: values.notes,
+        });
+      }
+      onOpenChange(false);
+    } catch {
+      // The mutation hook shows the error toast; keep the sheet open for correction.
     }
-    onOpenChange(false);
   }
+
+  const pendingDateChanged =
+    pendingValues && transaction
+      ? occurredAtChanged(transaction, pendingValues)
+      : false;
 
   return (
     <>
@@ -207,7 +232,16 @@ export function TransactionFormSheet({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="paymentMethod">Método</Label>
-              <Select id="paymentMethod" {...register("paymentMethod")}>
+              <Select
+                id="paymentMethod"
+                {...paymentMethodField}
+                onChange={(event) => {
+                  void paymentMethodField.onChange(event);
+                  if (event.target.value !== "CREDIT") {
+                    setValue("creditCardId", undefined);
+                  }
+                }}
+              >
                 <option value="PIX">Pix</option>
                 <option value="DEBIT">Débito</option>
                 <option value="CREDIT">Crédito</option>
@@ -270,6 +304,11 @@ export function TransactionFormSheet({
       <EditScopeDialog
         open={pendingValues !== null}
         onOpenChange={(value) => !value && setPendingValues(null)}
+        restrictToOneReason={
+          pendingDateChanged
+            ? "A data só pode ser alterada nesta parcela. As datas das demais parcelas serão preservadas."
+            : undefined
+        }
         onConfirm={(scope) => {
           if (pendingValues) void persist(pendingValues, scope);
           setPendingValues(null);
@@ -277,4 +316,64 @@ export function TransactionFormSheet({
       />
     </>
   );
+}
+
+function occurredAtChanged(
+  transaction: Transaction,
+  values: TransactionFormInput,
+): boolean {
+  return values.occurredAt !== formatDateTimeLocal(transaction.occurredAt);
+}
+
+function effectiveCreditCardId(values: TransactionFormInput): string | null {
+  return values.paymentMethod === "CREDIT"
+    ? (values.creditCardId ?? null)
+    : null;
+}
+
+function hasActiveCreditCard(
+  values: TransactionFormInput,
+  transaction: Transaction | undefined,
+  creditCards: { id: string }[],
+): boolean {
+  if (values.paymentMethod !== "CREDIT") return true;
+
+  const creditCardId = effectiveCreditCardId(values);
+  const changesCreditRelation =
+    !transaction ||
+    transaction.paymentMethod !== "CREDIT" ||
+    creditCardId !== transaction.creditCardId;
+
+  return (
+    !changesCreditRelation ||
+    (creditCardId !== null &&
+      creditCards.some((card) => card.id === creditCardId))
+  );
+}
+
+function buildUpdateInput(
+  transaction: Transaction,
+  values: TransactionFormInput,
+): UpdateTransactionInput {
+  const input: UpdateTransactionInput = {};
+  const amountCents = parseMoneyInput(values.amount);
+  const description = values.description ?? "";
+  const categoryId = values.categoryId ?? null;
+  const creditCardId = effectiveCreditCardId(values);
+  const notes = values.notes ?? "";
+
+  if (amountCents !== transaction.amountCents) input.amountCents = amountCents;
+  if (description !== transaction.description) input.description = description;
+  if (occurredAtChanged(transaction, values)) {
+    input.occurredAt = toSPOffsetISOString(values.occurredAt);
+  }
+  if (categoryId !== transaction.categoryId) input.categoryId = categoryId;
+  if (values.accountId !== transaction.accountId) input.accountId = values.accountId;
+  if (creditCardId !== transaction.creditCardId) input.creditCardId = creditCardId;
+  if (values.paymentMethod !== transaction.paymentMethod) {
+    input.paymentMethod = values.paymentMethod;
+  }
+  if (notes !== (transaction.notes ?? "")) input.notes = notes || null;
+
+  return input;
 }

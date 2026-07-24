@@ -84,7 +84,7 @@ export function TransactionsTable({
       setScopeTarget(transaction);
       return;
     }
-    void deleteTransaction.mutateAsync({ id: transaction.id });
+    deleteTransaction.mutate({ id: transaction.id });
   }
 
   const columns = useMemo<ColumnDef<Transaction>[]>(
@@ -250,10 +250,14 @@ export function TransactionsTable({
                 size="sm"
                 onClick={async () => {
                   const ids = Object.keys(rowSelection);
-                  for (const id of ids) {
-                    await deleteTransaction.mutateAsync({ id });
+                  try {
+                    for (const id of ids) {
+                      await deleteTransaction.mutateAsync({ id });
+                    }
+                    setRowSelection({});
+                  } catch {
+                    // The mutation hook shows the error toast; preserve remaining selection.
                   }
-                  setRowSelection({});
                 }}
               >
                 Excluir selecionados
@@ -317,7 +321,7 @@ export function TransactionsTable({
         open={scopeTarget !== null}
         onOpenChange={(value) => !value && setScopeTarget(null)}
         onConfirm={(scope) => {
-          if (scopeTarget) void deleteTransaction.mutateAsync({ id: scopeTarget.id, scope });
+          if (scopeTarget) deleteTransaction.mutate({ id: scopeTarget.id, scope });
           setScopeTarget(null);
         }}
       />
