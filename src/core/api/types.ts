@@ -30,6 +30,13 @@ export interface Account {
   updatedAt: ISODateTime;
 }
 
+export interface UpdateAccountInput {
+  name?: string;
+  kind?: AccountKind;
+  openingBalanceCents?: number;
+  currency?: string;
+}
+
 export interface CreditCard {
   id: UUID;
   userId: UUID;
@@ -40,6 +47,14 @@ export interface CreditCard {
   dueDay: number;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
+}
+
+export interface UpdateCreditCardInput {
+  accountId?: UUID;
+  name?: string;
+  limitCents?: number;
+  closingDay?: number;
+  dueDay?: number;
 }
 
 export type InvoiceStatus = "OPEN" | "CLOSED";

@@ -3,7 +3,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { proxyFetch } from "@/core/api/client-fetch";
-import type { AggregationBasis, PaymentMethod, TransactionsPage, TransactionType } from "@/core/api/types";
+import type {
+  AggregationBasis,
+  PaymentMethod,
+  TransactionsPage,
+  TransactionType,
+} from "@/core/api/types";
 import { queryKeys } from "@/shared/queries/keys";
 
 export interface TransactionsFilters {
@@ -12,12 +17,16 @@ export interface TransactionsFilters {
   type?: TransactionType;
   categoryId?: string;
   accountId?: string;
+  creditCardId?: string;
   method?: PaymentMethod;
   basis: AggregationBasis;
   limit?: number;
 }
 
-export function useTransactionsInfiniteQuery(filters: TransactionsFilters) {
+export function useTransactionsInfiniteQuery(
+  filters: TransactionsFilters,
+  enabled = true,
+) {
   return useInfiniteQuery({
     queryKey: queryKeys.transactions(filters),
     queryFn: ({ pageParam }) =>
@@ -25,6 +34,10 @@ export function useTransactionsInfiniteQuery(filters: TransactionsFilters) {
         query: { ...filters, cursor: pageParam },
       }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.meta.hasMore ? (lastPage.meta.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.meta.hasMore
+        ? (lastPage.meta.nextCursor ?? undefined)
+        : undefined,
+    enabled,
   });
 }
