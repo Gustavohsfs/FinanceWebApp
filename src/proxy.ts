@@ -5,7 +5,9 @@ import { buildSessionCookies, decodeJwtExpiry, SESSION_COOKIE_NAMES } from "@/co
 import { serverEnv } from "@/core/config/env";
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|registrar).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|icon|apple-icon|login|registrar).*)",
+  ],
 };
 
 function redirectToLogin(request: NextRequest): NextResponse {
